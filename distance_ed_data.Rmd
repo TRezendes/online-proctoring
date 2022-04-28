@@ -1,0 +1,117 @@
+---
+title: "DTSC690 Presentation Distance Education Data"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, echo = FALSE}
+library(tidyverse)
+library(lubridate)
+library(colorBlindness)
+library(scales)
+```
+
+```{r}
+instCols2_5 <- c('ID', 'instName', 'year', 'undergradOffered', 'gradOffered')
+instCols6_0<- c('ID', 'instName', 'year', 'distOffered', 'undergradOffered', 'gradOffered')
+instColsSub <- c('instName', 'year', 'undergradOffered', 'gradOffered')
+studentCols <- c('ID', 'instName', 'year', 'studentLevel', 'totalEnrolled', 'allDist', 'someDist', 'IDX_EF')
+studentColsSub <- c('instName', 'year', 'studentLevel', 'totalEnrolled', 'allDist', 'someDist')
+```
+
+
+
+Import IPEDS student enrollment data from CSV
+```{r}
+student20 <- read_csv(file = 'student20.csv', col_names = studentCols, skip = 1, col_types = 'dcdcdddd') %>% select(all_of(studentColsSub))
+
+student19 <- read_csv(file = 'student19.csv', col_names = studentCols, skip = 1, col_types = 'dcdcdddd') %>% select(all_of(studentColsSub))
+
+student18 <- read_csv(file = 'student18.csv', col_names = studentCols, skip = 1, col_types = 'dcdcdddd') %>% select(all_of(studentColsSub))
+
+student17 <- read_csv(file = 'student17.csv', col_names = studentCols, skip = 1, col_types = 'dcdcdddd') %>% select(all_of(studentColsSub))
+
+student16 <- read_csv(file = 'student16.csv', col_names = studentCols, skip = 1, col_types = 'dcdcdddd') %>% select(all_of(studentColsSub))
+
+student15 <- read_csv(file = 'student15.csv', col_names = studentCols, skip = 1, col_types = 'dcdcdddd') %>% select(all_of(studentColsSub))
+
+student14 <- read_csv(file = 'student14.csv', col_names = studentCols, skip = 1, col_types = 'dcdcdddd') %>% select(all_of(studentColsSub))
+
+student13 <- read_csv(file = 'student13.csv', col_names = studentCols, skip = 1, col_types = 'dcdcdddd') %>% select(all_of(studentColsSub))
+
+student12 <- read_csv(file = 'student12.csv', col_names = studentCols, skip = 1, col_types = 'dcdcdddd') %>% select(all_of(studentColsSub))
+```
+
+
+Import IPEDS institutional offering data from CSV
+```{r}
+inst20 <- read_csv(file  = 'inst20.csv', col_names = instCols6_0, skip = 1, col_types = 'dcdccc') %>% select(all_of(instColsSub))
+
+inst19 <- read_csv(file  = 'inst19.csv', col_names = instCols6_0, skip = 1, col_types = 'dcdccc') %>% select(all_of(instColsSub))
+
+inst18 <- read_csv(file  = 'inst18.csv', col_names = instCols6_0, skip = 1, col_types = 'dcdccc') %>% select(all_of(instColsSub))
+
+inst17 <- read_csv(file  = 'inst17.csv', col_names = instCols6_0, skip = 1, col_types = 'dcdccc') %>% select(all_of(instColsSub))
+
+inst16 <- read_csv(file  = 'inst16.csv', col_names = instCols6_0, skip = 1, col_types = 'dcdccc') %>% select(all_of(instColsSub))
+
+inst15 <- read_csv(file  = 'inst15.csv', col_names = instCols2_5, skip = 1, col_types = 'dcdcc') %>% select(all_of(instColsSub))
+
+inst14 <- read_csv(file  = 'inst14.csv', col_names = instCols2_5, skip = 1, col_types = 'dcdcc') %>% select(all_of(instColsSub))
+
+inst13 <- read_csv(file  = 'inst13.csv', col_names = instCols2_5, skip = 1, col_types = 'dcdcc') %>% select(all_of(instColsSub))
+
+inst12 <- read_csv(file  = 'inst12.csv', col_names = instCols2_5, skip = 1, col_types = 'dcdcc') %>% select(all_of(instColsSub))
+```
+
+
+```{r}
+inst <- bind_rows(inst12, inst13, inst14, inst15, inst16, inst17, inst18, inst19, inst20)
+instCount <- inst %>% filter(undergradOffered == 'Yes' | gradOffered == 'Yes') %>% group_by(year) %>% summarise(numOfferingDist = n())
+instCount$year <- as_factor(instCount$year)
+
+instCount
+```
+
+```{r}
+instsOffering <- instCount %>% ggplot() +
+  geom_col(mapping = aes(year, numOfferingDist), fill = '#12335F') + 
+  theme(axis.title.y = element_blank()) +
+  scale_x_discrete(name = 'Year') +
+  scale_y_continuous(labels = label_comma(), breaks = seq(0, 3500, 500)) +
+  ggtitle('Number of US Higher Education Institutions Offering Distace Learning') +
+  theme(plot.title = element_text(hjust = 0.5), panel.background = element_rect(fill = "#ffffff00", color = "#ffffff00"), panel.grid.major.y = element_line(size = 0.2, linetype = 'solid', colour = "#66666688"), panel.grid.major.x = element_blank(), plot.background = element_rect(fill = "#ffffff00"))
+instsOffering
+```
+
+
+
+```{r}
+stud <- bind_rows(student12, student13, student14, student15, student16, student17, student18, student19, student20)
+stud <- stud %>% filter(studentLevel == 'All students total') %>% group_by(year) %>% drop_na() %>% summarise(sumEnrolled = sum(totalEnrolled), sumAllDist = sum(allDist), sumSomeDist = sum(someDist)) %>% mutate(sumSomeOrAll = sumAllDist + sumSomeDist)
+stud$year <- as_factor(stud$year)
+
+stud
+```
+
+
+```{r}
+studsEnrolled <- stud %>% ggplot() +
+  geom_col(mapping = aes(year, sumEnrolled, fill = 'Total Number of Students Enrolled')) +
+  geom_col(mapping = aes(year, sumSomeOrAll, fill = 'Number of Students Enrolled in At Least Some Distance Learning Classes')) +
+  scale_x_discrete(name = 'Year') +
+  scale_y_continuous(labels = label_comma(), breaks = seq(0, 18000000, 3000000)) +
+  scale_fill_manual(breaks = c('Total Number of Students Enrolled', 'Number of Students Enrolled in At Least Some Distance Learning Classes'), values = c('#12335F', '#48A0F8')) +
+  theme(legend.title = element_blank(),
+        legend.position = 'bottom',
+        axis.title.y = element_blank(),
+        panel.background = element_rect(fill = "#ffffff00", color = "#ffffff00"),
+        panel.grid.major.y = element_line(size = 0.4, linetype = 'solid',
+                                          color = "#66666688"),
+        panel.grid.major.x = element_blank(),
+        plot.background = element_rect(fill = "#ffffff00"))
+studsEnrolled
+```
